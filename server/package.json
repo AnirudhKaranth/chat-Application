@@ -5,7 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "schema:gen": "drizzle-kit generate --dialect postgresql --out db/migrations --schema db/schema.js",
+    "schema:migrate": "node db/migrate",
+    "db:push": "drizzle-kit push --dialect postgresql --schema db/schema.js  --url env.DATABASE_URL "
+
   },
   "keywords": [],
   "author": "",
@@ -17,9 +21,13 @@
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.33.0",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.12.0",
+    "postgres": "^3.4.4",
     "socket.io": "^4.7.5"
   },
   "devDependencies": {
+    "drizzle-kit": "^0.24.0",
     "tailwindcss": "^3.4.10"
   }
 }
