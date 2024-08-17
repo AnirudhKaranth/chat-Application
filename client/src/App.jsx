@@ -1,23 +1,21 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+
+import Auth from "./components/Auth";
+import Home from "./components/Home";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
-  const [message, setMessage] = useState("")
-
-  const handleSubmit = (e)=>{
-    e.preventDefault()
-
-  }
+ 
 
   return (
-    <>
-      <form onSubmit={handleSubmit}>
-        <input type="text" value={message} onChange={(e)=> setMessage(e.target.value)}/>
-        <button>submit</button>
-      </form>
-    </>
+    <BrowserRouter>
+    <Routes>
+      <Route path="/chat" element={<ProtectedRoute > <Home /></ProtectedRoute> }/>
+      <Route path="/" element={<Auth/>}/>
+    </Routes>
+
+      
+    </BrowserRouter>
   )
 }
 

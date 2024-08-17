@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, boolean,text, integer, pgEnum, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, boolean,text, integer, pgEnum, primaryKey, timestamp } from 'drizzle-orm/pg-core';
 
 const messageType = pgEnum('msgType', ['file', 'text', 'img']);
 
@@ -7,14 +7,15 @@ export const users = pgTable('users', {
     email: varchar('email', { length: 100 }).unique().notNull(),
     name: varchar('name', { length: 100 }).notNull(),
     password: text('password').notNull(),
-    status:text("status").notNull().default("off")
+    status:boolean("status").notNull().default(true)
 });
 
 export const rooms = pgTable('rooms', {
     id: serial('id').primaryKey(),
-    isGroup: boolean('is_group').default(false),
     lastMessage: text('last_message'),
-    creatorId: integer("user_id").references(()=> users.id).notNull()
+    user1: integer('user1').references(() => users.id).notNull(),
+    user2: integer('user2').references(() => users.id).notNull(),
+
 });
 
 export const messages = pgTable('messages', {
@@ -24,15 +25,13 @@ export const messages = pgTable('messages', {
     receiverId: integer('receiver_id').references(() => users.id).notNull(),
     content: text('content').notNull(),
     type: text("type"), // e.g., 'file', 'img', 'text'
+    seen: boolean("seen").notNull().default(false),
+    createdAt: timestamp('createdAt', { mode: "date" }),
+
 });
 
 
-export const participants = pgTable('participants', {
-    roomId: integer('room_id').references(() => rooms.id).notNull(),
-    userId: integer('user_id').references(() => users.id).notNull(),
-}, (table) => ({
-    pk: primaryKey(table.roomId, table.userId)
-}));
+
 
 
 

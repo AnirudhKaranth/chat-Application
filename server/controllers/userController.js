@@ -22,18 +22,18 @@ export const signUp = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPasword = await bcrypt.hash(password, salt);
 
-        const newUser = await db.insert(users).values({ name, email, password: hashedPasword });
-        console.log("newUser: ",newUser)
-        // const token = jwt.sign({ userId: userExists[0].id, userName: userExists[0].name , email:userExists[0].email}, process.env.JWT_SECRET , { expiresIn: process.env.JWT_LIFETIME })
-
+        const newUser = await db.insert(users).values({ name, email, password: hashedPasword }).returning();
+        // console.log("newUser: ",newUser)
+        const token = jwt.sign({ userId: newUser[0].id, userName: newUser[0].name , email:newUser[0].email}, process.env.JWT_SECRET , { expiresIn: process.env.JWT_LIFETIME })
+        await db.update(users).set(users.status= "on").where(eq(users.id, newUser[0].id))
         res.status(201).json({
-            // User:{
-            //     id:newUser.id,
-            //     email:newUser.email,
-            //     name:newUser.name
-            // },
-            // token
-            "msg":"alo"
+            User:{
+                id:newUser[0].id,
+                email:newUser[0].email,
+                name:newUser[0].name
+            },
+            token
+            
         })
 
     } catch (error) {
@@ -47,7 +47,9 @@ export const signUp = async (req, res) => {
 
 export const login = async(req, res)=>{
     try {
+
         const {  email, password } = req.body;
+        console.log(email)
 
         if ( !email || !password) {
             return res.status(400).json({"msg":"Please provide all values"})
@@ -66,14 +68,34 @@ export const login = async(req, res)=>{
         }
 
         const token = jwt.sign({ userId: userExists[0].id, userName: userExists[0].name , email:userExists[0].email}, process.env.JWT_SECRET , { expiresIn: process.env.JWT_LIFETIME })
-
-        res.status(201).json({
+        await db.update(users).set({status: "on"}).where(eq(users.id, userExists[0].id))
+        res.status(200).json({
             User:{
                 id:userExists[0].id,
                 email:userExists[0].email,
                 name:userExists[0].name
             },
             token
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            msg:"something went wrong"
+        })
+    }
+}
+
+
+export const updateStatus = async(req,res)=>{
+    try {
+        const {userId} = req.User
+        const {status} = req.params
+
+        await db.update(users).set(users.status=status).where(eq(users.id, userId))
+
+        res.status(200).json({
+            msg:"status updated"
         })
 
     } catch (error) {
