@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { getOlderMessages } from "../controllers/chatController.js";
-import { addMessage } from "../utils/chatUtil.js";
+import { addMessage, checkIfUserIsOnline, getAllMyChats, updateUserStatus } from "../utils/chatUtil.js";
 
 export const initialize = async (io) => {
   const onlineUsers = new Map();
@@ -25,12 +25,12 @@ export const initialize = async (io) => {
     }
   });
 
-  io.on("connection", (socket) => {
+  io.on("connection", async(socket) => {
     console.log("User connected:", socket.User);
 
     // Add the user to the online users map
     onlineUsers.set(socket.User.userId, socket.id);
-
+    updateUserStatus({userId:socket.User.userId, status:true})
     // Notify others of the current online users
     io.emit("online-users", Array.from(onlineUsers.keys()));
 
@@ -63,9 +63,15 @@ export const initialize = async (io) => {
     });
 
     // Handle typing notifications
-    socket.on("typing", ({ room }) => {
-      socket.to(room).emit("user-typing", socket.User.userName);
+    socket.on("typing", ({ data }) => {
+      socket.to(data?.contactId).emit("user-typing", {roomId: data.roomId});
     });
+
+    socket.on("stop-typing", ({ data }) => {
+      socket.to(data?.contactId).emit("user-stoped", {roomId: data.roomId});
+    });
+
+
 
     // Handle file uploads
     socket.on("file-upload", (formData) => {
@@ -85,15 +91,35 @@ export const initialize = async (io) => {
       });
     });
 
-    // Handle pagination for loading older messages
-    socket.on("load-older-messages", async ({ room, page }) => {
-      const messages = await getOlderMessages(room, page);
-      socket.emit("older-messages", messages);
-    });
+    // // Handle pagination for loading older messages
+    // socket.on("load-older-messages", async ({ room, page }) => {
+    //   const messages = await getOlderMessages(room, page);
+    //   socket.emit("older-messages", messages);
+    // });
+
+    //check if user is online
+    socket.on("check",async({userId})=>{
+    console.log("hey ",userId)
+      let status = await checkIfUserIsOnline({userId})
+    console.log("hey ",status)
+
+
+     
+      socket.emit("status", status);
+    })
+
+
+    let allMychats = await getAllMyChats({userId:socket.User.userId})
+    allMychats.forEach((item)=>{
+      socket.to(item).emit("myStatus", true)
+    })
 
     // Handle disconnects
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async() => {
       console.log("User Disconnected:", socket.User.userName);
+      console.log("id: ",socket.User.userId )
+      await updateUserStatus({userId:socket.User.userId, status:false})
+      
       onlineUsers.delete(socket.User.userId);
       io.emit("online-users", Array.from(onlineUsers.keys()));
     });

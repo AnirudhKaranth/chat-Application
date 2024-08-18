@@ -51,40 +51,53 @@ export const getAllChats = async(req, res)=>{
 
 
 
-export const getAllMessages=async(req,res)=>{
-    try {
-        const {userId} = req.user
-        const {roomId} = req.params
-        const room = await db.select().from(rooms).where(eq(roomId,rooms.id))
-        if(!room[0]){
-            return res.status(500).json({
-                msg:"something went wrong while fetching chat"
-            })
-        }
+// export const getAllMessages=async(req,res)=>{
+//     try {
+//         const {userId} = req.user
+//         const {roomId} = req.params
+//         const room = await db.select().from(rooms).where(eq(roomId,rooms.id))
+//         if(!room[0]){
+//             return res.status(500).json({
+//                 msg:"something went wrong while fetching chat"
+//             })
+//         }
 
-        if(!(room[0].user1 === userId || room[0].user2 === userId)){
+//         if(!(room[0].user1 === userId || room[0].user2 === userId)){
+//             return res.status(500).json({
+//                 msg:"Not Authorized"
+//             })
+//         }
+
+//         const messages = await db.select().from(messages).where(eq(roomId, messages.roomId))
+//         res.status(200).json(messages)
+//     } catch (error) {
+//         res.status(500).json({
+//             msg:"something went wrong"
+//         })
+//     }
+// }
+
+
+export const getOlderMessages = async (req, res) => {
+    try {
+        const {userId} = req.User
+        const {roomId, page}= req.params
+        const room = await db.select().from(rooms).where(eq(rooms.id,roomId))
+        if(!(room[0]?.user1 === userId || room[0]?.user2 === userId)){
             return res.status(500).json({
                 msg:"Not Authorized"
             })
         }
+        const allMessages = await db.select().from(messages).where(eq(roomId, messages.roomId)).orderBy(desc(messages.id)).limit(15).offset(15*(Number(page)-1))
 
-        const messages = await db.select().from(messages).where(eq(roomId, messages.roomId))
-        res.status(200).json(messages)
+        res.status(200).json(allMessages)
+
+        
     } catch (error) {
         res.status(500).json({
             msg:"something went wrong"
         })
     }
-}
-
-
-// Example function to fetch older messages (implement this based on your database)
-export const getOlderMessages = async (room, page) => {
-    // Fetch messages based on room and page number (implement your DB logic here)
-    return [
-      // Return an array of message objects
-      // Example: { content, senderId, senderName, room, timestamp, type }
-    ];
   };
 
 export const addRoom = async(req,res)=>{
