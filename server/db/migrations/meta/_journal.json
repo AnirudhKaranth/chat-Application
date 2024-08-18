@@ -36,6 +36,20 @@
       "when": 1723824662736,
       "tag": "0004_tan_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1723942321225,
+      "tag": "0005_flimsy_pride",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1723942398831,
+      "tag": "0006_good_moon_knight",
+      "breakpoints": true
     }
   ]
 }

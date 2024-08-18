@@ -20,7 +20,7 @@ export const getNoOfUnseenMesssagesByChatId =async(chatId, userId)=>{
     
 }
 
-export const addMessage = async( roomId, senderId, receiverId, content, type )=>{
+export const addMessage = async( {roomId, senderId, receiverId, content, type} )=>{
     try {
         
         await db.insert(messages).values({roomId, senderId, receiverId, content, type})

@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { getOlderMessages } from "../controllers/chatController.js";
+import { addMessage } from "../utils/chatUtil.js";
 
 export const initialize = async (io) => {
   const onlineUsers = new Map();
@@ -40,20 +41,25 @@ export const initialize = async (io) => {
     });
 
     // Handle receiving a message
-    socket.on("message", ({ recieverId, room, message, type }) => {
-      console.log({ recieverId, room, message, type });
+    socket.on("message", ({ receiverId, roomId, content, type, day, hrs }) => {
+      console.log({ receiverId, room, message, type });
+      
       const messageData = {
-        content: message,
+        content: content,
         senderId: socket.User.userId,
         senderName: socket.User.userName,
-        room,
-        timestamp: new Date(),
+        roomId,
         type: type || "text", // Default to "text" if no type is provided
+       day,
+       hrs,
+       seen:false
       };
       
       // Emit message to the specific room and receiver
       socket.to(room).emit("receive-message", messageData);
-      socket.to(recieverId).emit("receive-message", messageData);
+      socket.to(receiverId).emit("receive-message", messageData);
+
+      addMessage({roomId, senderId, receiverId, content, type});
     });
 
     // Handle typing notifications
