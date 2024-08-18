@@ -50,6 +50,20 @@
       "when": 1723942398831,
       "tag": "0006_good_moon_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1723993077368,
+      "tag": "0007_outgoing_scarlet_spider",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1723994595008,
+      "tag": "0008_noisy_siren",
+      "breakpoints": true
     }
   ]
 }

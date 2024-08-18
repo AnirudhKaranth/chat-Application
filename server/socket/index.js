@@ -1,14 +1,20 @@
 import jwt from "jsonwebtoken";
-import { getOlderMessages } from "../controllers/chatController.js";
-import { addMessage, checkIfUserIsOnline, getAllMyChats, updateUserStatus } from "../utils/chatUtil.js";
+import {
+  addMessage,
+  checkIfUserIsOnline,
+  getAllMyChats,
+  updateUserStatus,
+} from "../utils/chatUtil.js";
+import { messages } from "../db/schema.js";
+import { and, eq } from "drizzle-orm";
+import { db } from "../db/drizzle.config.js";
 
 export const initialize = async (io) => {
   const onlineUsers = new Map();
 
-  // Middleware for token-based authentication
   io.use((socket, next) => {
     const token = socket?.handshake?.auth?.token;
-    
+
     if (!token) {
       return next(new Error("Authentication Error"));
     }
@@ -25,14 +31,10 @@ export const initialize = async (io) => {
     }
   });
 
-  io.on("connection", async(socket) => {
+  io.on("connection", async (socket) => {
     console.log("User connected:", socket.User);
 
-    // Add the user to the online users map
-    onlineUsers.set(socket.User.userId, socket.id);
-    updateUserStatus({userId:socket.User.userId, status:true})
-    // Notify others of the current online users
-    io.emit("online-users", Array.from(onlineUsers.keys()));
+    updateUserStatus({ userId: socket.User.userId, status: true });
 
     // Handle joining a room
     socket.on("join-room", (room) => {
@@ -41,89 +43,92 @@ export const initialize = async (io) => {
     });
 
     // Handle receiving a message
-    socket.on("message", ({ receiverId, roomId, content, type, day, hrs }) => {
-      console.log({ receiverId, room, message, type });
-      
-      const messageData = {
-        content: content,
-        senderId: socket.User.userId,
-        senderName: socket.User.userName,
-        roomId,
-        type: type || "text", // Default to "text" if no type is provided
-       day,
-       hrs,
-       seen:false
-      };
-      
-      // Emit message to the specific room and receiver
-      socket.to(room).emit("receive-message", messageData);
-      socket.to(receiverId).emit("receive-message", messageData);
+    socket.on(
+      "message",
+      ({ receiverId, roomId, content, type, fileName, day, hrs }) => {
+        console.log({ receiverId, roomId, content, type });
 
-      addMessage({roomId, senderId, receiverId, content, type});
-    });
+        const messageData = {
+          content: content,
+          senderId: socket.User.userId,
+          senderName: socket.User.userName,
+          roomId,
+          fileName,
+          type: type || "text",
+          day,
+          hrs,
+          seen: false,
+        };
+
+        socket.to(receiverId).emit("receive-message", messageData);
+        socket.to(receiverId).emit("lastMessage", { roomId, msg: content });
+        if (fileName) {
+          socket.emit("lastMessage", { roomId, msg: fileName });
+        } else {
+          socket.emit("lastMessage", { roomId, msg: content.substring(0, 15) });
+        }
+
+        addMessage({
+          roomId,
+          senderId: socket.User.userId,
+          receiverId,
+          content,
+          type,
+          fileName,
+        });
+      }
+    );
 
     // Handle typing notifications
-    socket.on("typing", ({ data }) => {
-      socket.to(data?.contactId).emit("user-typing", {roomId: data.roomId});
+    socket.on("typing", (data) => {
+      console.log(data);
+      socket.to(data?.contactId).emit("user-typing", { roomId: data.roomId });
     });
 
-    socket.on("stop-typing", ({ data }) => {
-      socket.to(data?.contactId).emit("user-stoped", {roomId: data.roomId});
+    socket.on("stop-typing", (data) => {
+      console.log("stop: ", data);
+      socket.to(data?.contactId).emit("user-stoped", { roomId: data.roomId });
     });
-
-
-
-    // Handle file uploads
-    socket.on("file-upload", (formData) => {
-      const { room, sender } = formData;
-      // Process the file (saving, etc.)
-      console.log("File uploaded by:", sender);
-
-      // Notify the room of the file
-      io.to(room).emit("receive-message", {
-        content: "File uploaded",
-        senderId: socket.User.userId,
-        senderName: socket.User.userName,
-        room,
-        timestamp: new Date(),
-        type: "file",
-        fileUrl: "url-to-file", // Replace with actual file URL after processing
-      });
-    });
-
-    // // Handle pagination for loading older messages
-    // socket.on("load-older-messages", async ({ room, page }) => {
-    //   const messages = await getOlderMessages(room, page);
-    //   socket.emit("older-messages", messages);
-    // });
 
     //check if user is online
-    socket.on("check",async({userId})=>{
-    console.log("hey ",userId)
-      let status = await checkIfUserIsOnline({userId})
-    console.log("hey ",status)
-
-
-     
+    socket.on("check", async ({ userId }) => {
+      let status = await checkIfUserIsOnline({ userId });
       socket.emit("status", status);
-    })
+    });
 
+    let allMychats = await getAllMyChats({ userId: socket.User.userId });
+    allMychats.forEach((item) => {
+      socket.to(item).emit("myStatus", true);
+    });
 
-    let allMychats = await getAllMyChats({userId:socket.User.userId})
-    allMychats.forEach((item)=>{
-      socket.to(item).emit("myStatus", true)
-    })
+    //handle seen messages
+    socket.on("message-seen", async ({ roomId, contactId }) => {
+      try {
+        await db
+          .update(messages)
+          .set({ seen: true })
+          .where(
+            and(
+              eq(messages.roomId, roomId),
+              eq(messages.receiverId, socket.User.userId)
+            )
+          );
+        socket
+          .to(contactId)
+          .emit("seen", { userId: socket?.User?.userId, roomId });
+        socket.emit("saw", { roomId });
+      } catch (error) {
+        console.error("Error updating message status:", error);
+      }
+    });
 
     // Handle disconnects
-    socket.on("disconnect", async() => {
+    socket.on("disconnect", async () => {
       console.log("User Disconnected:", socket.User.userName);
-      console.log("id: ",socket.User.userId )
-      await updateUserStatus({userId:socket.User.userId, status:false})
-      
+      await updateUserStatus({ userId: socket.User.userId, status: false });
+
       onlineUsers.delete(socket.User.userId);
       io.emit("online-users", Array.from(onlineUsers.keys()));
     });
   });
 };
-
-

@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, serial, varchar, boolean,text, integer, pgEnum, primaryKey, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, boolean,text, integer, timestamp } from 'drizzle-orm/pg-core';
 
-const messageType = pgEnum('msgType', ['file', 'text', 'img']);
+
 
 export const users = pgTable('users', {
     id: serial('id').primaryKey(),
@@ -32,8 +32,10 @@ export const messages = pgTable('messages', {
     senderId: integer('sender_id').references(() => users.id).notNull(),
     receiverId: integer('receiver_id').references(() => users.id).notNull(),
     content: text('content').notNull(),
-    type: text("type"), // e.g., 'file', 'img', 'text'
+    type: text("type"),
+    fileName:text("fileName").default(null),
     seen: boolean("seen").notNull().default(false),
+    hrs:text("hrs"),
     createdAt: timestamp('createdAt')
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

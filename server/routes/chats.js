@@ -5,10 +5,8 @@ import userAuth from "../middleware/auth.js"
 const router = express.Router()
 
 router.get("/get",userAuth, getAllChats)
-router.get("/messages/:roomId/:page",userAuth,getOlderMessages)
+router.get("/messages/:roomId/",userAuth,getOlderMessages)
 router.post("/add",userAuth, addRoom)
-
-
 
 
 export default router

@@ -7,12 +7,9 @@ const Home = () => {
   
   const user = JSON.parse(localStorage.getItem("user"))
   const token = localStorage.getItem("token")
-  // const [token , setToken] = useState("")
+ 
   const [selectedRoom, setSelectedRoom] = useState(null);
-  // const socket = useRef(null);
-  // if(!token || !user){
-  //   return <div>Not Authorized</div>
-  // }
+ 
   const socket = useMemo(
     () =>
       io("http://localhost:8000", {
@@ -22,22 +19,11 @@ const Home = () => {
       }),
     []
   );
-  // const [message, setMessage] = useState("");
-  // const [messages, setMessages] = useState([]);
-  // const [room, setRoom] = useState("")
-  // const [contacts, setContacts] = useState([])
 
-
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   console.log(socket)
-  //   // socket.emit("message", { message, room });
-  //   setMessage("");
-  // };
 
 
   const showChat = ({roomId, contactId, contactName}) => {
-    setSelectedRoom({roomId, contactId, contactName}); // Set the selected chat room when a contact is clicked
+    setSelectedRoom({roomId, contactId, contactName}); 
   };
   console.log(socket)
  
@@ -63,7 +49,7 @@ const Home = () => {
 
         <div className="w-4/6 border-2 border-gray-500">
         {selectedRoom ? (
-          <Chat socket={socket} room={selectedRoom} user={user} /> // Pass selectedRoom and user to Chat component
+          <Chat socket={socket} room={selectedRoom} user={user} /> 
         ) : (
           <div className="flex items-center justify-center h-full">
             <p>Select a contact to start chatting</p>
