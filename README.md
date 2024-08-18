@@ -24,6 +24,12 @@ The **Multi-User Messaging System** is a real-time chat application designed for
 5. **Image Upload:** Supports image uploads in chats, enhancing the messaging experience.
 6. **Infinite Scrolling:** Messages are loaded as you scroll to the top, providing a seamless chat history experience.
 
+## Remaining Features
+
+1. **Video Upload:** Plan to implement a video upload feature that allows users to share videos within chats, similar to the existing image upload feature.
+2. **Read/Unread Message Sorting:** Implement a feature to sort messages based on their read/unread status, ensuring important unread messages are easily accessible to the user.
+
+
 ## Installation
 
 ### Prerequisites
