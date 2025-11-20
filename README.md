@@ -41,7 +41,7 @@ The **Multi-User Messaging System** is a real-time chat application designed for
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/chat-Application.git
+git clone https://github.com/AnirudhKaranth/chat-Application.git
 cd chat-Application
 cd server
 node index.js
